@@ -27,6 +27,9 @@ router.get("/product", (req, res) => {
       });
     }
   }
+  if(req.query.sold && !req.user.customer){
+    filter.sold = true ;
+  }
   if (req.user.role == roles.customer) {
     filter.isSold = false;
     filter.isDelisted = false;
@@ -77,6 +80,28 @@ router.get("/product/:id", authorization(roles.customer), async (req, res) => {
     }
     product.isSold = true ;
     product.buyer = req.user._id ;
+    await product.save() ;
+    res.send({
+      message: "successfully buy the product " + product ,
+    });
+  } catch(e) {
+    res.status(501).send({
+      "message": "unable to buy the product" + e ,
+    })
+  }
+});
+
+// delist the product
+router.get("/product/:id/delist", authorization(roles.owner , roles.manager), async (req, res) => {
+  const id = req.params.id ;
+  try{
+    const product = await Product.findById(id) ;
+    if(!product){
+      res.status(501).send({
+        message: "no product found with this ID" ,
+      })
+    }
+    product.isDelisted = true ;
     await product.save() ;
     res.send({
       message: "successfully buy the product " + product ,
